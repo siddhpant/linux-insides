@@ -1,0 +1,58 @@
+# Note: Indentation here is of 2 spaces.
+
+name: Generate release
+
+
+on:
+  push:
+    branches:
+      - master
+
+  workflow_dispatch: {}  # For manual switch.
+# End of on.
+
+
+jobs:
+  scheduled:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+        with:
+          ref: master
+      
+      - name: Setup node
+        uses: actions/setup-node@v3
+        with:
+          node-version: "latest"
+
+      - name: Install gitbook
+        run: npm install gitbook-cli -g
+
+      - name: Create filename
+        run: echo 'filename_prefix="linux-insides_$(git rev-parse --short HEAD)"' >> $GITHUB_ENV
+
+      - name: Generate PDF
+        run: gitbook pdf ./ "./$filename_prefix.pdf"
+
+      - name: Generate ePub
+        run: gitbook epub ./ "./$filename_prefix.epub"
+
+      - name: Generate Mobi
+        run: gitbook mobi ./ "./$filename_prefix.mobi"
+
+      - name: Create release
+        uses: ncipollo/release-action@v1
+        with:
+          allowUpdates: true
+          artifactErrorsFailBuild: true
+          artifacts: "${{ env.filename_prefix }}.*"
+          commit: "master"
+          generateReleaseNotes: true
+    # End of steps.
+  # End of scheduled.
+# End of jobs.
+
+
+# End of file.
